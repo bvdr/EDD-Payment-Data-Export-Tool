@@ -1,4 +1,9 @@
 {
+    "name": "bvdr/edd-payment-data-export-tool",
+    "description": "EDD Payment Data Export Tool",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "version": "1.0.0",
     "require-dev": {
         "wp-coding-standards/wpcs": "^3.0"
     }
