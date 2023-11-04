@@ -7,3 +7,6 @@
 
 # htaccess
 /.htaccess
+
+# Vendor
+/vendor
