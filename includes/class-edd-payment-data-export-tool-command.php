@@ -228,10 +228,14 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 				WP_CLI::error( "Invalid status filter: \"{$status_filter}\". Must be a string (e.g., \"complete,refunded\")" );
 			}
 
-			// Validate the status filter format by checking if the status is in constant STATUSES
-			if ( ! in_array( $status_filter, edd_get_payment_status_keys() ) ) {
-				$statuses_string = implode( ', ', edd_get_payment_status_keys() );
-				WP_CLI::error( "Invalid status: \"{$status_filter}\". Available options: {$statuses_string}" );
+			// Check if all the statuses are valid.
+			$status_array = explode( ',', $status_filter );
+
+			foreach ( $status_array as $status ) {
+				if ( ! in_array( $status, edd_get_payment_status_keys() ) ) {
+					$statuses_string = implode( ', ', edd_get_payment_status_keys() );
+					WP_CLI::error( "Invalid status: \"{$status}\". Available options: {$statuses_string}" );
+				}
 			}
 		}
 
