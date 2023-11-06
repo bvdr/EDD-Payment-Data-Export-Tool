@@ -2,7 +2,28 @@
 declare( strict_types=1 );
 
 class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
-	private const STATUSES = [ 'complete', 'refunded', 'pending', 'failed', 'revoked', 'abandoned', 'processing', 'failed' ];
+	private const FIELDS = [
+		'customer-id',
+		'date',
+		'status',
+		'amount',
+		'id',
+		'gateway',
+		'name',
+		'note',
+		'address',
+		'email',
+		'phone',
+	];
+
+	private const DEFAULT_FIELDS = [
+		'customer-id',
+		'date',
+		'status',
+		'amount',
+		'id',
+		'gateway',
+	];
 
 	/**
 	 * Export payment data command.
@@ -62,7 +83,16 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		// Validate the array of arguments.
 		$this->validate_arguments( $args, $assoc_args );
 
+		// Get the export data.
+		$export_data = $this->get_export_data( $assoc_args );
 
+		// Get the output format.
+		$output = $assoc_args['output'] ?? 'shell';
+
+		// If 'shell' output, print the data as table.
+		if ( 'shell' === $output ) {
+			WP_CLI\Utils\format_items( 'table', $export_data, $assoc_args['fields'] ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS );
+		}
 	}
 
 	/**
@@ -199,8 +229,8 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			}
 
 			// Validate the status filter format by checking if the status is in constant STATUSES
-			if ( ! in_array( $status_filter, self::STATUSES ) ) {
-				$statuses_string = implode( ', ', self::STATUSES );
+			if ( ! in_array( $status_filter, edd_get_payment_status_keys() ) ) {
+				$statuses_string = implode( ', ', edd_get_payment_status_keys() );
 				WP_CLI::error( "Invalid status: \"{$status_filter}\". Available options: {$statuses_string}" );
 			}
 		}
@@ -230,6 +260,13 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		}
 	}
 
+	/**
+	 * Validates the date format.
+	 *
+	 * @param string $date The date to validate.
+	 *
+	 * @return bool
+	 */
 	protected function validate_date( $date ) {
 		// Validate the date format.
 		$date_format = 'Y-m-d';
@@ -240,6 +277,146 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Returns the export data from Easy Digital Downloads.
+	 *
+	 * @param array $assoc_args Command associative arguments.
+	 *
+	 * @return array
+	 */
+	protected function get_export_data( $assoc_args ): array {
+		$start_date      = $assoc_args['start-date'] ?? '';
+		$end_date        = $assoc_args['end-date'] ?? '';
+		$last_days       = $assoc_args['last-days'] ?? 0;
+		$amount_filter   = $assoc_args['amount-filter'] ?? '';
+		$status_filter   = $assoc_args['status-filter'] ?? '';
+		$customer_filter = $assoc_args['customer-filter'] ?? '';
+		$product_filter  = $assoc_args['product-filter'] ?? '';
+		$fields          = $assoc_args['fields'] ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS;
+
+		$result = $this->edd_payment_data_fetch( $start_date, $end_date, $last_days, $amount_filter, $status_filter, $customer_filter, $product_filter, $fields );
+
+		return $result;
+	}
+
+	/**
+	 * Fetch payment data from Easy Digital Downloads.
+	 *
+	 * @param string $start_date      The start date for the payment data.
+	 * @param string $end_date        The end date for the payment data.
+	 * @param int    $last_days       The number of days for which to fetch the payment data.
+	 * @param string $amount_filter   The amount filter for payment data.
+	 * @param string $status_filter   The status filter for payment data.
+	 * @param string $customer_filter The customer filter for payment data.
+	 * @param string $product_filter  The product filter for payment data.
+	 *
+	 * @return array The fetched payment data.
+	 */
+	protected function edd_payment_data_fetch( $start_date = '', $end_date = '', $last_days = 0, $amount_filter = '', $status_filter = '', $customer_filter = '', $product_filter = '', $fields = [] ) {
+		// Include the necessary Easy Digital Downloads files.
+		if ( ! class_exists( 'EDD_Payments_Query' ) ) {
+			require_once EDD_PLUGIN_DIR . 'includes/payments/class-payments-query.php';
+		}
+
+		// Prepare the query arguments for EDD_Payments_Query.
+		$args = [
+			'number' => 20,
+		];
+
+		// Set the date query based on the provided parameters.
+		if ( ! empty( $start_date ) && ! empty( $end_date ) ) {
+			$args['date_query'] = [
+				[
+					'after'     => $start_date,
+					'before'    => $end_date,
+					'inclusive' => true,
+				],
+			];
+		} elseif ( ! empty( $last_days ) ) {
+			$args['date_query'] = [
+				[
+					'after'     => '-' . $last_days . ' days',
+					'inclusive' => true,
+				],
+			];
+		}
+
+		// Set the amount filter if provided.
+		if ( ! empty( $amount_filter ) ) {
+			// Remove the $ sign.
+			$amount_filter = str_replace( '$', '', $amount_filter );
+
+			// Remove any spaces.
+			$amount_filter = str_replace( ' ', '', $amount_filter );
+
+			// Remove any commas.
+			$amount_filter = str_replace( ',', '', $amount_filter );
+
+			$operator = substr( $amount_filter, 0, 1 );
+			$amount   = substr( $amount_filter, 1 );
+
+			// Set the amount filter.
+			$args['meta_query'] = [
+				[
+					'key'     => '_edd_payment_total',
+					'value'   => $amount,
+					'compare' => $operator,
+					'type'    => 'DECIMAL',
+				],
+			];
+		}
+
+		// Set the status filter if provided.
+		if ( ! empty( $status_filter ) ) {
+			$args['status'] = explode( ',', $status_filter );
+		}
+
+		// Set the customer filter if provided.
+		if ( ! empty( $customer_filter ) ) {
+			// Route based on email or ID.
+			if ( is_numeric( $customer_filter ) ) {
+				$args['user'] = (int) $customer_filter;
+			} else {
+				$args['email'] = $customer_filter;
+			}
+		}
+
+		// Set the product filter if provided.
+		if ( ! empty( $product_filter ) ) {
+			$args['download_price_id'] = explode( ',', $product_filter );
+		}
+
+		// Print json of the query arguments pretty format.
+		WP_CLI::log( json_encode( $args ) );
+
+		// Perform the payment data query.
+		$payment_query = new EDD_Payments_Query( $args );
+		$payments      = $payment_query->get_payments();
+
+		$payment_data = [];
+
+		foreach ( $payments as $payment ) {
+			$single_payment = [];
+
+			// Get the payment data fields that you want to include in the output.
+			in_array( 'customer-id', $fields ) ? $single_payment['customer-id'] = $payment->customer_id : '';
+			in_array( 'date', $fields ) ? $single_payment['date'] = $payment->date : '';
+			in_array( 'status', $fields ) ? $single_payment['status'] = $payment->status : '';
+			in_array( 'amount', $fields ) ? $single_payment['amount'] = $payment->total : '';
+			in_array( 'id', $fields ) ? $single_payment['id'] = $payment->ID : '';
+			in_array( 'gateway', $fields ) ? $single_payment['gateway'] = $payment->gateway : '';
+			in_array( 'name', $fields ) ? $single_payment['name'] = $payment->name : '';
+			in_array( 'note', $fields ) ? $single_payment['note'] = $payment->note : '';
+			in_array( 'address', $fields ) ? $single_payment['address'] = $payment->address : '';
+			in_array( 'email', $fields ) ? $single_payment['email'] = $payment->email : '';
+			in_array( 'phone', $fields ) ? $single_payment['phone'] = $payment->phone : '';
+
+			$payment_data[] = $single_payment;
+		}
+
+		return $payment_data;
 	}
 }
 
