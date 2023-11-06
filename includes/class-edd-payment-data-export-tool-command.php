@@ -330,21 +330,12 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		];
 
 		// Set the date query based on the provided parameters.
-		if ( ! empty( $start_date ) && ! empty( $end_date ) ) {
-			$args['date_query'] = [
-				[
-					'after'     => $start_date,
-					'before'    => $end_date,
-					'inclusive' => true,
-				],
-			];
-		} elseif ( ! empty( $last_days ) ) {
-			$args['date_query'] = [
-				[
-					'after'     => '-' . $last_days . ' days',
-					'inclusive' => true,
-				],
-			];
+		if ( ! empty( $start_date ) ) {
+			$args['start_date'] = $start_date;
+		}
+
+		if ( ! empty( $end_date ) ) {
+			$args['end_date'] = $end_date;
 		}
 
 		// Set the amount filter if provided.
