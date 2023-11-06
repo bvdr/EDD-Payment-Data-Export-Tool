@@ -353,13 +353,11 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$amount   = substr( $amount_filter, 1 );
 
 			// Set the amount filter.
-			$args['meta_query'] = [
-				[
-					'key'     => '_edd_payment_total',
-					'value'   => $amount,
-					'compare' => $operator,
-					'type'    => 'DECIMAL',
-				],
+			$args['meta_query'][] = [
+				'key'     => '_edd_payment_total',
+				'value'   => $amount,
+				'compare' => $operator,
+				'type'    => 'DECIMAL',
 			];
 		}
 
@@ -372,9 +370,13 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		if ( ! empty( $customer_filter ) ) {
 			// Route based on email or ID.
 			if ( is_numeric( $customer_filter ) ) {
-				$args['user'] = (int) $customer_filter;
+				$args['customer'] = (int) $customer_filter;
 			} else {
-				$args['email'] = $customer_filter;
+				$args['meta_query'][] = [
+					'key'     => '_edd_payment_user_email',
+					'value'   => $customer_filter,
+					'compare' => '=',
+				];
 			}
 		}
 
@@ -384,7 +386,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		}
 
 		// Print json of the query arguments pretty format.
-		WP_CLI::log( json_encode( $args ) );
+		WP_CLI::line( json_encode( $args, JSON_PRETTY_PRINT ) );
 
 		// Perform the payment data query.
 		$payment_query = new EDD_Payments_Query( $args );
