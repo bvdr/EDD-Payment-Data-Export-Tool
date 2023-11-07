@@ -89,10 +89,25 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		// Get the output format.
 		$output = $assoc_args['output'] ?? 'shell';
 
+		// Get the format csv or json.
+		$format = $assoc_args['format'] ?? 'csv';
+
 		// If 'shell' output, print the data as table.
 		if ( 'shell' === $output ) {
-			WP_CLI\Utils\format_items( 'table', $export_data, $assoc_args['fields'] ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS );
+			if ( 'json' === $format ) {
+				WP_CLI::line( json_encode( $export_data, JSON_PRETTY_PRINT ) );
+			} elseif ( 'csv' === $format ) {
+				WP_CLI\Utils\format_items( 'table', $export_data, $assoc_args['fields'] ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS );
+			}
 		}
+
+		// If 'file' output, write the data to a file.
+		if ( 'file' === $output ) {
+			// Write the data to the file.
+			$this->update_payments_file( $export_data, $assoc_args, $overwrite = true );
+		}
+
+		WP_CLI::line( 'Exported ' . count( $export_data ) . ' payments.' );
 	}
 
 	/**
@@ -326,7 +341,8 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		// Prepare the query arguments for EDD_Payments_Query.
 		$args = [
-			'number' => 20,
+			'number' => - 1,
+			'page'   => 1,
 		];
 
 		// Set the date query based on the provided parameters.
@@ -368,7 +384,6 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		// Set the customer filter if provided.
 		if ( ! empty( $customer_filter ) ) {
-			// Route based on email or ID.
 			if ( is_numeric( $customer_filter ) ) {
 				$args['customer'] = (int) $customer_filter;
 			} else {
@@ -388,10 +403,17 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		// Print json of the query arguments pretty format.
 		WP_CLI::line( json_encode( $args, JSON_PRETTY_PRINT ) );
 
+		// Asses performance with microtime.
+		$start_time = microtime( true );
+
 		// Perform the payment data query.
+		// Var 1. Args number = -1, page = 1
 		$payment_query = new EDD_Payments_Query( $args );
 		$payments      = $payment_query->get_payments();
+		$end_time      = microtime( true );
+		WP_CLI::line( 'Query time all: ' . (int) ( $end_time - $start_time ) . ' seconds' );
 
+		// Prepare the payment data for output.
 		$payment_data = [];
 
 		foreach ( $payments as $payment ) {
@@ -414,6 +436,45 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		}
 
 		return $payment_data;
+	}
+
+	protected function update_payments_file( array $payments, array $assoc_args, bool $overwrite = true ): void {
+		// Get the file path.
+		$file   = $assoc_args['file'];
+		$format = $assoc_args['format'] ?? 'csv';
+
+		// Use file_put_contents to write the data to the file.
+		if ( $format === 'json' ) {
+			$write_result = file_put_contents( $file, json_encode( $payments, JSON_PRETTY_PRINT ) );
+		} elseif ( $format === 'csv' ) {
+			$write_result = file_put_contents( $file, $this->array_to_csv( $payments ) );
+		}
+
+		if ( $write_result === false ) {
+			WP_CLI::error( 'Error writing to file.' );
+		}
+	}
+
+	/**
+	 * Create a CSV string from an array.
+	 *
+	 * @param array $array
+	 *
+	 * @return string
+	 */
+	protected function array_to_csv( array $array ): string {
+		$csv = '';
+
+		// Set the headers.
+		$headers = array_keys( $array[0] );
+		$csv .= implode( ',', $headers ) . "\n";
+
+		// Set the rows.
+		foreach ( $array as $item ) {
+			$csv .= implode( ',', $item ) . "\n";
+		}
+
+		return $csv;
 	}
 }
 
