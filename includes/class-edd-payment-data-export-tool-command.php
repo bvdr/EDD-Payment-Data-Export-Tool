@@ -64,7 +64,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 *  : Filter payments based on amount criteria. Example: '>$1.00' or '< $100' (greater than $100).
 	 *
 	 *  [--status-filter=<status-filter>]
-	 *  : Filter payments based on status criteria. Example: "complete,refunded" (include complete and refunded payments).
+	 *  : Filter payments based on status criteria. Example: "published,refunded" (include complete and refunded payments).
 	 *
 	 *  [--customer-filter=<customer-filter>]
 	 *  : Filter payments based on customer email or ID.
@@ -75,7 +75,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 *  ## EXAMPLES
 	 *
 	 *  # Export payment data for the last 7 days in CSV format to the shell
-	 *  wp edd export_payment_data --last-days=7 --format=csv --output=shell --amount-filter='> $1.00' --status-filter='complete,refunded'
+	 *  wp edd export_payment_data --last-days=7 --format=csv --output=shell --amount-filter='> $1.00' --status-filter='published,refunded'
 	 *
 	 *  # Export payment data between specific dates in JSON format to a file
 	 *  wp edd export_payment_data --start-date=2023-11-01 --end-date=2023-11-30 --format=json --output=file --file=/path/to/export.json
