@@ -5,6 +5,8 @@
  * Version: 1.0
  * Author: Bogdan Dragomir
  * Author URI: bogdan.is?utm_source=edd-payment-data-export-tool
+ *
+ * @package EDD_Payment_Data_Export_Tool
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
