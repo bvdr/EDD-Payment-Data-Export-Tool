@@ -21,7 +21,7 @@
 
 	<!-- Rules -->
 	<rule ref="WordPress">
-		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+<!--		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>-->
 		<exclude name="Generic.Arrays.DisallowShortArraySyntax" />
 		<exclude name="WordPress.PHP.DisallowShortTernary.Found" />
 		<exclude name="NeutronStandard.Functions.TypeHint.NoArgumentType" />
