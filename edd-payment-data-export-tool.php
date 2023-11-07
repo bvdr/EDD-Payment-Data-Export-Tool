@@ -5,6 +5,8 @@
  * Version: 1.0
  * Author: Bogdan Dragomir
  * Author URI: bogdan.is?utm_source=edd-payment-data-export-tool
+ *
+ * @package EDD_Payment_Data_Export_Tool
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,4 +24,4 @@ function edd_payment_data_export_tool_register_wpcli_command() {
 	require_once __DIR__ . '/includes/class-edd-payment-data-export-tool-command.php';
 }
 
-add_action('init', 'edd_payment_data_export_tool_register_wpcli_command');
+add_action( 'init', 'edd_payment_data_export_tool_register_wpcli_command' );

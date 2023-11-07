@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress Theme Coding Standards">
+	<description>Wordpress Coding Standards</description>
+
+	<file>.</file>
+	<exclude-pattern>*content/index.php</exclude-pattern>
+	<exclude-pattern>*content/object-cache.php</exclude-pattern>
+	<exclude-pattern>*content/sunrise.php</exclude-pattern>
+	<exclude-pattern>*content/uploads/</exclude-pattern>
+	<exclude-pattern>/wp-config.php</exclude-pattern>
+	<exclude-pattern>icons/</exclude-pattern>
+
+	<!-- Only check .php files -->
+	<arg name="extensions" value="php" />
+
+	<!-- PHP 7.0 and higher. -->
+	<config name="testVersion" value="7.0-" />
+
+	<!-- Check if correct text domain is used -->
+	<config name="text_domain" value="edd-payments-export, woocommerce" />
+
+	<!-- Rules -->
+	<rule ref="WordPress">
+<!--		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>-->
+		<exclude name="Generic.Arrays.DisallowShortArraySyntax" />
+		<exclude name="WordPress.PHP.DisallowShortTernary.Found" />
+		<exclude name="NeutronStandard.Functions.TypeHint.NoArgumentType" />
+		<exclude name="NeutronStandard.Functions.TypeHint.NoReturnType" />
+		<exclude name="NeutronStandard.StrictTypes.RequireStrictTypes.StrictTypes" />
+		<exclude name="PEAR.Files.IncludingFile.UseRequire" />
+		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_key" />
+		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_query" />
+		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_value" />
+		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_tax_query" />
+		<exclude name="WordPress.PHP.StrictComparisons.LooseComparison" />
+		<exclude name="WordPress.Security.NonceVerification.NoNonceVerification" />
+		<exclude name="WordPress.WP.EnqueuedResourceParameters.MissingVersion" />
+	</rule>
+</ruleset>
