@@ -382,7 +382,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		// Set the product filter if provided.
 		if ( ! empty( $product_filter ) ) {
-			$args['download_price_id'] = explode( ',', $product_filter );
+			$args['download'] = explode( ',', $product_filter );
 		}
 
 		// Print json of the query arguments pretty format.
