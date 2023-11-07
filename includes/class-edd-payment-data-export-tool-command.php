@@ -443,7 +443,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		$payment_query = new EDD_Payments_Query( $args );
 		$payments      = $payment_query->get_payments();
 		$end_time      = microtime( true );
-		WP_CLI::line( 'Query time all: ' . (int) ( $end_time - $start_time ) . ' seconds' );
+		WP_CLI::line( 'Query time: ' . (int) ( $end_time - $start_time ) . ' seconds' );
 
 		// Prepare the payment data for output.
 		$payment_data = [];
