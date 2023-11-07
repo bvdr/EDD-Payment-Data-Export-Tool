@@ -484,6 +484,11 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		$file   = $assoc_args['file'];
 		$format = $assoc_args['format'] ?? 'csv';
 
+		// Create folder structure if it does not exist.
+		if ( ! file_exists( dirname( $file ) ) ) {
+			mkdir( dirname( $file ), 0755, true );
+		}
+
 		// Use file_put_contents to write the data to the file.
 		if ( 'json' === $format ) {
 			$write_result = file_put_contents( $file, json_encode( $payments, JSON_PRETTY_PRINT ) );
