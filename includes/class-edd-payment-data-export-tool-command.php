@@ -215,6 +215,21 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 				WP_CLI::error( "Invalid file: \"{$file}\". Must be a string." );
 			}
 
+			// Validate the file format. (e.g., format=csv => /path/to/file.csv / format=json => /path/to/file.json).
+			if ( ! preg_match( '/^(.+)\.(csv|json)$/', $file ) ) {
+				WP_CLI::error( "Invalid file extension: \"{$file}\". Must be a string (e.g., \"/path/to/file.csv\" or \"/path/to/file.json\")" );
+			}
+
+			// For format=json, allow only .json extension.
+			if ( 'json' === $assoc_args['format'] && ! preg_match( '/^(.+)\.json$/', $file ) ) {
+				WP_CLI::error( "Invalid file extension: \"{$file}\". Must be a string (e.g., \"/path/to/file.json\")" );
+			}
+
+			// For format=csv, allow only .csv extension.
+			if ( 'csv' === $assoc_args['format'] && ! preg_match( '/^(.+)\.csv$/', $file ) ) {
+				WP_CLI::error( "Invalid file extension: \"{$file}\". Must be a string (e.g., \"/path/to/file.csv\")" );
+			}
+
 			// Check if folder exists and ask to create it.
 			if ( ! file_exists( dirname( $file ) ) ) {
 				// If the user does not want to create the folder, exit.
@@ -419,9 +434,6 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		if ( ! empty( $product_filter ) ) {
 			$args['download'] = explode( ',', $product_filter );
 		}
-
-		// Print json of the query arguments pretty format.
-		WP_CLI::line( json_encode( $args, JSON_PRETTY_PRINT ) );
 
 		// Asses performance with microtime.
 		$start_time = microtime( true );
