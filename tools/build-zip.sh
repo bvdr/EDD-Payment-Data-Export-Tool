@@ -29,17 +29,18 @@ if [[ "$BUILD_DIR" = false ]]; then
 	echo "➤ Copying files..."
 	if [[ -e "../.distignore" ]]; then
 		echo "ℹ︎ Using .distignore"
-		mkdir -p ../dist/tmp
+		mkdir -p ../dist/$SLUG
 		# Copy from current branch to /dist, excluding dotorg assets
 		# The --delete flag will delete anything in destination that no longer exists in source
-		rsync -rc --exclude-from="../.distignore" "../" ../dist/tmp --delete --delete-excluded
+		rsync -rc --exclude-from="../.distignore" "../" ../dist/$SLUG --delete --delete-excluded
 	fi
 else
 	echo "ℹ︎ Copying files from build directory..."
-	rsync -rc "$BUILD_DIR/" ../dist/tmp --delete --delete-excluded
+	rsync -rc "$BUILD_DIR/" ../dist/$SLUG --delete --delete-excluded
 fi
 
 echo "➤ Generating zip file..."
 cd "../dist" || exit
 zip -r "$SLUG.zip" .
 echo "✓ Zip file generated!"
+rm -rf $SLUG
