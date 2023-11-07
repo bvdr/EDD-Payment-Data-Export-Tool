@@ -22,4 +22,4 @@ function edd_payment_data_export_tool_register_wpcli_command() {
 	require_once __DIR__ . '/includes/class-edd-payment-data-export-tool-command.php';
 }
 
-add_action('init', 'edd_payment_data_export_tool_register_wpcli_command');
+add_action( 'init', 'edd_payment_data_export_tool_register_wpcli_command' );

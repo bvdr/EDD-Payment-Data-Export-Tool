@@ -1,6 +1,15 @@
 <?php
+/**
+ * Plugin Name: EDD Payment Data Export Tool
+ *
+ * @package EDD_Payment_Data_Export_Tool
+ */
+
 declare( strict_types=1 );
 
+/**
+ * EDD Payment Data Export Tool.
+ */
 class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	private const FIELDS = [
 		'customer-id',
@@ -216,7 +225,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 				}
 
 				if ( ! is_writable( $folder ) ) {
-					WP_CLI::error( "Folder is not writable." );
+					WP_CLI::error( 'Folder is not writable.' );
 				}
 			}
 		}
@@ -272,7 +281,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 				WP_CLI::error( "Invalid product filter: \"{$product_filter}\". Must be a string (e.g., \"123,456\")" );
 			}
 
-			// Validate the product filter format by checking if the status is in constant STATUSES
+			// Validate the product filter format by checking if the status is in constant STATUSES.
 			if ( ! preg_match( '/^(\d+(?:,\s*\d+)*)$/', $product_filter ) ) {
 				WP_CLI::error( "Invalid product filter format: \"{$product_filter}\". Must be a string (e.g., \"123,456\")" );
 			}
@@ -330,6 +339,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 * @param string $status_filter   The status filter for payment data.
 	 * @param string $customer_filter The customer filter for payment data.
 	 * @param string $product_filter  The product filter for payment data.
+	 * @param array  $fields          The product filter for payment data.
 	 *
 	 * @return array The fetched payment data.
 	 */
@@ -407,7 +417,6 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		$start_time = microtime( true );
 
 		// Perform the payment data query.
-		// Var 1. Args number = -1, page = 1
 		$payment_query = new EDD_Payments_Query( $args );
 		$payments      = $payment_query->get_payments();
 		$end_time      = microtime( true );
@@ -438,19 +447,28 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		return $payment_data;
 	}
 
+	/**
+	 * The function that writes the payments to the file.
+	 *
+	 * @param array $payments   The payments to write to the file.
+	 * @param array $assoc_args Command associative arguments.
+	 * @param bool  $overwrite  Whether to overwrite the file or not. Currently it is always true.
+	 *
+	 * @return void
+	 */
 	protected function update_payments_file( array $payments, array $assoc_args, bool $overwrite = true ): void {
 		// Get the file path.
 		$file   = $assoc_args['file'];
 		$format = $assoc_args['format'] ?? 'csv';
 
 		// Use file_put_contents to write the data to the file.
-		if ( $format === 'json' ) {
+		if ( 'json' === $format ) {
 			$write_result = file_put_contents( $file, json_encode( $payments, JSON_PRETTY_PRINT ) );
-		} elseif ( $format === 'csv' ) {
+		} elseif ( 'csv' === $format ) {
 			$write_result = file_put_contents( $file, $this->array_to_csv( $payments ) );
 		}
 
-		if ( $write_result === false ) {
+		if ( false === $write_result ) {
 			WP_CLI::error( 'Error writing to file.' );
 		}
 	}
@@ -458,7 +476,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	/**
 	 * Create a CSV string from an array.
 	 *
-	 * @param array $array
+	 * @param array $array The array to convert to CSV.
 	 *
 	 * @return string
 	 */
@@ -467,7 +485,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		// Set the headers.
 		$headers = array_keys( $array[0] );
-		$csv .= implode( ',', $headers ) . "\n";
+		$csv     .= implode( ',', $headers ) . "\n";
 
 		// Set the rows.
 		foreach ( $array as $item ) {
