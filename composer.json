@@ -9,7 +9,8 @@
     },
     "extra": {
         "files": [
-            "!/vendor"
+            "!/vendor",
+            "!/.git"
         ]
     }
 }
