@@ -1,11 +1,14 @@
 /.wordpress-org
 /.git
 /.github
+/dist
+/tools
 
 .distignore
 .gitignore
 
 composer.json
 composer.lock
+phpcs.xml.dist
 README.md
 /vendor
