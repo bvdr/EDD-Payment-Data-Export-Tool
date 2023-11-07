@@ -12,11 +12,11 @@ declare( strict_types=1 );
  */
 class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	private const FIELDS = [
+		'id',
 		'customer-id',
 		'date',
 		'status',
 		'amount',
-		'id',
 		'gateway',
 		'name',
 		'note',
@@ -26,11 +26,11 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	];
 
 	private const DEFAULT_FIELDS = [
+		'id',
 		'customer-id',
 		'date',
 		'status',
 		'amount',
-		'id',
 		'gateway',
 	];
 
@@ -174,7 +174,17 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$fields = $assoc_args['fields'];
 
 			if ( ! is_string( $fields ) ) {
-				WP_CLI::error( "Invalid fields: \"{$fields}\". Must be a string." );
+				WP_CLI::error( "Invalid fields: \"{$fields}\". Must be a string. (e.g., \"customer-id,amount,email,customer_id\"" );
+			}
+
+			// Check if all the fields are valid.
+			$fields_array = explode( ',', $fields );
+
+			foreach ( $fields_array as $field ) {
+				if ( ! in_array( $field, self::FIELDS ) ) {
+					$fields_string = implode( ', ', self::FIELDS );
+					WP_CLI::error( "Invalid field: \"{$field}\". Available options: {$fields_string}" );
+				}
 			}
 		}
 
@@ -429,11 +439,11 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$single_payment = [];
 
 			// Get the payment data fields that you want to include in the output.
+			in_array( 'id', $fields ) ? $single_payment['id'] = $payment->ID : '';
 			in_array( 'customer-id', $fields ) ? $single_payment['customer-id'] = $payment->customer_id : '';
 			in_array( 'date', $fields ) ? $single_payment['date'] = $payment->date : '';
 			in_array( 'status', $fields ) ? $single_payment['status'] = $payment->status : '';
 			in_array( 'amount', $fields ) ? $single_payment['amount'] = $payment->total : '';
-			in_array( 'id', $fields ) ? $single_payment['id'] = $payment->ID : '';
 			in_array( 'gateway', $fields ) ? $single_payment['gateway'] = $payment->gateway : '';
 			in_array( 'name', $fields ) ? $single_payment['name'] = $payment->name : '';
 			in_array( 'note', $fields ) ? $single_payment['note'] = $payment->note : '';
