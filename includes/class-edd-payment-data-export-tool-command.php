@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: EDD Payment Data Export Tool
+ * EDD Payment Data Export Tool
  *
- * @package EDD_Payment_Data_Export_Tool
+ * @package EDDTools
  */
 
 declare( strict_types=1 );

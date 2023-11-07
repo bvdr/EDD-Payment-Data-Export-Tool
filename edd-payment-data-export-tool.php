@@ -1,14 +1,19 @@
 <?php
 /**
- * Plugin Name: EDD Payment Data Export Tool
+ * Plugin Name: EDD Payment Data Export Tool (WP-CLI)
  * Description: 🛠️ WP-CLI command to export payment data from Easy Digital Downloads.
- * Version: 1.0
  * Author: Bogdan Dragomir
- * Author URI: bogdan.is?utm_source=edd-payment-data-export-tool
+ * Author URI: https://bogdan.is?utm_source=wordpress&utm_medium=plugin&utm_campaign=edd-payment-data-export-tool
+ * Version: 1.0.5
+ * Text Domain: easy-digital-downloads-tools
+ * Domain Path: languages
  *
- * @package EDD_Payment_Data_Export_Tool
+ * @package EDDTools
+ * @author Bogdan Dragomir
+ * @version 1.0.5
  */
 
+// Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
