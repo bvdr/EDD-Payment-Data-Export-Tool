@@ -209,7 +209,8 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		// Validate the file.
 		if ( isset( $assoc_args['file'] ) ) {
-			$file = $assoc_args['file'];
+			$file   = $assoc_args['file'];
+			$format = $assoc_args['format'] ?? 'csv';
 
 			if ( ! is_string( $file ) ) {
 				WP_CLI::error( "Invalid file: \"{$file}\". Must be a string." );
@@ -221,12 +222,12 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			}
 
 			// For format=json, allow only .json extension.
-			if ( 'json' === $assoc_args['format'] && ! preg_match( '/^(.+)\.json$/', $file ) ) {
+			if ( 'json' === $format && ! preg_match( '/^(.+)\.json$/', $file ) ) {
 				WP_CLI::error( "Invalid file extension: \"{$file}\". Must be a string (e.g., \"/path/to/file.json\")" );
 			}
 
 			// For format=csv, allow only .csv extension.
-			if ( 'csv' === $assoc_args['format'] && ! preg_match( '/^(.+)\.csv$/', $file ) ) {
+			if ( 'csv' === $format && ! preg_match( '/^(.+)\.csv$/', $file ) ) {
 				WP_CLI::error( "Invalid file extension: \"{$file}\". Must be a string (e.g., \"/path/to/file.csv\")" );
 			}
 
