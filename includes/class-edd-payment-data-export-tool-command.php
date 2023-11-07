@@ -234,12 +234,12 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			// Check if folder exists and ask to create it.
 			if ( ! file_exists( dirname( $file ) ) ) {
 				// If the user does not want to create the folder, exit.
-				WP_CLI::confirm( "Folder does not exist: \"{$file}\". Create it?" );
+				WP_CLI::confirm( "Folder does not exist: \"{$file}\". Create it?", $assoc_args );
 			}
 
 			// Check if the file exists and ask to overwrite or not.
 			if ( file_exists( $file ) ) {
-				WP_CLI::confirm( "File already exists: \"{$file}\". Overwrite?" );
+				WP_CLI::confirm( "File already exists: \"{$file}\". Overwrite?", $assoc_args );
 			}
 
 			// Check if the folder is writable.
