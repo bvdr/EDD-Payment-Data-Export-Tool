@@ -338,7 +338,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 *
 	 * @param array $assoc_args Command associative arguments.
 	 *
-	 * @return array
+	 * @return array The export data.
 	 */
 	protected function get_export_data( $assoc_args ): array {
 		$start_date      = $assoc_args['start-date'] ?? '';
@@ -348,7 +348,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		$status_filter   = $assoc_args['status-filter'] ?? '';
 		$customer_filter = $assoc_args['customer-filter'] ?? '';
 		$product_filter  = $assoc_args['product-filter'] ?? '';
-		$fields          = $assoc_args['fields'] ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS;
+		$fields          = isset($assoc_args['fields']) ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS;
 
 		$result = $this->edd_payment_data_fetch( $start_date, $end_date, $last_days, $amount_filter, $status_filter, $customer_filter, $product_filter, $fields );
 
