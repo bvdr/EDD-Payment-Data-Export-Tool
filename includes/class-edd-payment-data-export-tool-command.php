@@ -46,7 +46,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 *  : The end date for the payment data export. Format: Y-m-d (e.g., 2023-11-31).
 	 *
 	 *  [--last-days=<last-days>]
-	 *  : Export payment data from the last X days. Example: 7 (for the last 7 days).
+	 *  : Export payment data from the last X days. Example: 7 (for the last 7 days). Predefined options: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, last_quarter, this_year, last_year.
 	 *
 	 *  [--format=<format>]
 	 *  : The output format for the payment data export. Options: csv, json. Default: csv.
@@ -345,12 +345,12 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	protected function get_export_data( $assoc_args ): array {
 		$start_date      = $assoc_args['start-date'] ?? '';
 		$end_date        = $assoc_args['end-date'] ?? '';
-		$last_days       = $assoc_args['last-days'] ?? 0;
+		$last_days       = $assoc_args['last-days'] ?? '';
 		$amount_filter   = $assoc_args['amount-filter'] ?? '';
 		$status_filter   = $assoc_args['status-filter'] ?? '';
 		$customer_filter = $assoc_args['customer-filter'] ?? '';
 		$product_filter  = $assoc_args['product-filter'] ?? '';
-		$fields          = isset($assoc_args['fields']) ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS;
+		$fields          = isset( $assoc_args['fields'] ) ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS;
 
 		$result = $this->edd_payment_data_fetch( $start_date, $end_date, $last_days, $amount_filter, $status_filter, $customer_filter, $product_filter, $fields );
 
@@ -362,7 +362,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 *
 	 * @param string $start_date      The start date for the payment data.
 	 * @param string $end_date        The end date for the payment data.
-	 * @param int    $last_days       The number of days for which to fetch the payment data.
+	 * @param string $last_days       The number of days for which to fetch the payment data.
 	 * @param string $amount_filter   The amount filter for payment data.
 	 * @param string $status_filter   The status filter for payment data.
 	 * @param string $customer_filter The customer filter for payment data.
@@ -371,7 +371,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 *
 	 * @return array The fetched payment data.
 	 */
-	protected function edd_payment_data_fetch( $start_date = '', $end_date = '', $last_days = 0, $amount_filter = '', $status_filter = '', $customer_filter = '', $product_filter = '', $fields = [] ) {
+	protected function edd_payment_data_fetch( $start_date = '', $end_date = '', $last_days = '', $amount_filter = '', $status_filter = '', $customer_filter = '', $product_filter = '', $fields = [] ) {
 		// Include the necessary Easy Digital Downloads files.
 		if ( ! class_exists( 'EDD_Payments_Query' ) ) {
 			require_once EDD_PLUGIN_DIR . 'includes/payments/class-payments-query.php';
@@ -390,6 +390,11 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		if ( ! empty( $end_date ) ) {
 			$args['end_date'] = $end_date;
+
+			// Since EDD will try to figure the start day to be the first day of the month (`setup_dates( $_start_date = 'this_month', $_end_date = false )`), we force it to an absurd past date. 🤔 Not the most elegant solution but it works well.
+			if ( empty( $start_date ) ) {
+				$args['start_date'] = '1970-01-01';
+			}
 		}
 
 		// Set the amount filter if provided.
