@@ -517,7 +517,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		}
 
 		// Set the headers.
-		$headers = array_keys( $array[0] );
+		$headers = array_keys( $array[0] ?? [] );
 		$csv     .= implode( ',', $headers ) . "\n";
 
 		// Set the rows.
