@@ -540,8 +540,11 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		$start_time = microtime( true );
 
 		// Perform the payment data query.
-		$payment_query = new EDD_Payments_Query( $args );
-		$payments      = $payment_query->get_payments();
+		$payments = [];
+		if ( 'refunded' !== $status_filter ) { // Special case were only refunds are queried. E.g., wp edd export_payment_data --last-days=1000 --format=csv --output=shell --amount-filter='< $10000.00' --status-filter='refunded'.
+			$payment_query = new EDD_Payments_Query( $args );
+			$payments      = $payment_query->get_payments();
+		}
 
 		if ( ! empty( $comparison_operator ) && '<' === $comparison_operator && false !== $refunds_included_in_query ) {
 			// Perform the refunds query.
