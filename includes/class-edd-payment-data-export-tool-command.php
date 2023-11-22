@@ -511,6 +511,11 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	protected function array_to_csv( array $array ): string {
 		$csv = '';
 
+		// If the array is empty, return an empty string.
+		if ( empty( $array ) ) {
+			return $csv;
+		}
+
 		// Set the headers.
 		$headers = array_keys( $array[0] );
 		$csv     .= implode( ',', $headers ) . "\n";
