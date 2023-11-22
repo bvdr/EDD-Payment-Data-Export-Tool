@@ -149,14 +149,16 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		// Validate the last days.
 		if ( isset( $assoc_args['last-days'] ) ) {
 			$last_days = $assoc_args['last-days'];
+			$edd_query = new EDD_Payments_Query();
+			$allowed_strings = array_keys( $edd_query->get_predefined_dates() );
 
 			// Invalidate start date and end date if last days is set.
 			if ( isset( $assoc_args['start-date'] ) || isset( $assoc_args['end-date'] ) ) {
 				WP_CLI::error( 'Cannot use start date or end date with last days.' );
 			}
 
-			if ( ! is_numeric( $last_days ) ) {
-				WP_CLI::error( "Invalid last days: \"{$last_days}\". Must be a number." );
+			if ( ! is_numeric( $last_days ) && ! in_array( $last_days, $allowed_strings ) ) {
+				WP_CLI::error( "Invalid last days: \"{$last_days}\". Must be a number or one of the following strings: " . implode( ', ', $allowed_strings ) );
 			}
 		}
 
