@@ -73,7 +73,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 * : Filter payments based on product variations by providing price/download IDs.
 	 *
 	 * [--gateway-filter=<gateway-filter>]
-	 * : Filter payments based on gateway. Example: "paypal,stripe" (include PayPal and Stripe payments). To see all available gateways, run "wp edd info".
+	 * : Filter payments based on gateway. Example: "paypal,amazon" (get PayPal payments and Amazon payments). To see all available gateways, run "wp edd export_payment_data --gateway-filter=help".
 	 *
 	 * ## ADDITIONAL INFO
 	 *
@@ -328,13 +328,19 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$gateway_filter = $assoc_args['gateway-filter'];
 
 			if ( ! is_string( $gateway_filter ) ) {
-				WP_CLI::error( "Invalid gateway filter: \"{$gateway_filter}\". Must be a string (e.g., \"paypal,stripe\")" );
+				WP_CLI::error( "Invalid gateway filter: \"{$gateway_filter}\". Must be a string (e.g., \"paypal,amazon\")" );
 			}
 
 			// Check if all the gateways are valid.
-			$gateway_array = explode( ',', $gateway_filter );
+			$gateway_array = explode( ',', str_replace( ' ', '', $gateway_filter ) );
 
 			$registered_gateways = array_keys( edd_get_payment_gateways() );
+
+			// If wp edd export_payment_data --gateway-filter=help, show the available gateways.
+			if ( 'help' === $gateway_filter ) {
+				WP_CLI::line( 'Available gateways: ' . implode( ', ', $registered_gateways ) );
+				exit;
+			}
 
 			foreach ( $gateway_array as $gateway ) {
 				if ( ! in_array( $gateway, $registered_gateways, true ) ) {
@@ -380,8 +386,9 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		$customer_filter = $assoc_args['customer-filter'] ?? '';
 		$product_filter  = $assoc_args['product-filter'] ?? '';
 		$fields          = isset( $assoc_args['fields'] ) ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS;
+		$gateway_filter  = $assoc_args['gateway-filter'] ?? '';
 
-		$result = $this->edd_payment_data_fetch( $start_date, $end_date, $last_days, $amount_filter, $status_filter, $customer_filter, $product_filter, $fields );
+		$result = $this->edd_payment_data_fetch( $start_date, $end_date, $last_days, $amount_filter, $status_filter, $customer_filter, $product_filter, $fields, $gateway_filter );
 
 		return $result;
 	}
@@ -397,10 +404,11 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 * @param string $customer_filter The customer filter for payment data.
 	 * @param string $product_filter  The product filter for payment data.
 	 * @param array  $fields          The product filter for payment data.
+	 * @param array  $gateway_filter  The gateway filter for payment data.
 	 *
 	 * @return array The fetched payment data.
 	 */
-	protected function edd_payment_data_fetch( $start_date = '', $end_date = '', $last_days = '', $amount_filter = '', $status_filter = '', $customer_filter = '', $product_filter = '', $fields = [] ) {
+	protected function edd_payment_data_fetch( $start_date = '', $end_date = '', $last_days = '', $amount_filter = '', $status_filter = '', $customer_filter = '', $product_filter = '', $fields = [], $gateway_filter = '' ) {
 		// Include the necessary Easy Digital Downloads files.
 		if ( ! class_exists( 'EDD_Payments_Query' ) ) {
 			require_once EDD_PLUGIN_DIR . 'includes/payments/class-payments-query.php';
@@ -487,6 +495,18 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$args['download'] = explode( ',', $product_filter );
 		}
 
+		// Set the gateway filter if provided.
+		if ( ! empty( $gateway_filter ) ) {
+			$gateways = explode( ',', str_replace( ' ', '', $gateway_filter ) );
+
+			// Append the gateways to the meta query.
+			$args['meta_query'][] = [
+				'key'     => '_edd_payment_gateway',
+				'value'   => $gateways,
+				'compare' => 'IN',
+			];
+		}
+
 		// If there is a > comparison operator remove the refunds from the query.
 		$refunds_included_in_query = $args['status'] ? array_search( 'refunded', $args['status'], true ) : true;
 		if ( ! empty( $comparison_operator ) && false !== $refunds_included_in_query ) {
@@ -498,7 +518,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 				unset( $args['status'][ $refunded_key ] );
 			}
 
-			// If the operator is > and refunds is the only statys. Exit with warning.
+			// If the operator is > and refunds is the only status. Exit with warning.
 			if ( '>' === $comparison_operator && empty( $args['status'] ) ) {
 				WP_CLI::warning( 'Cannot use ">" comparison operator with "refunded" status only.' );
 				exit;
@@ -619,7 +639,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		// Set the headers.
 		$headers = array_keys( $array[0] ?? [] );
-		$csv     .= implode( ',', $headers ) . "\n";
+		$csv    .= implode( ',', $headers ) . "\n";
 
 		// Set the rows.
 		foreach ( $array as $item ) {
