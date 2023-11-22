@@ -397,6 +397,17 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			}
 		}
 
+		// If last days is set, use it to set the start date.
+		if ( ! empty( $last_days ) ) {
+			$args['start_date'] = $this->calculate_start_date($last_days);
+			if ( is_numeric( $last_days ) ) {
+				// Set the end date to today. This is needed since the default calculate-date function sets the end date to end of start day. This way the end_date will be set as the end of today.
+				$args['end_date'] = date( 'Y-m-d', strtotime( "today" ) );;
+			} else {
+				$args['end_date'] = false;
+			}
+		}
+
 		// Set the amount filter if provided.
 		if ( ! empty( $amount_filter ) ) {
 			// Remove the $ sign.
@@ -533,6 +544,23 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		}
 
 		return $csv;
+	}
+
+	/**
+	 * Calculate the start date in Y-m-d format if it's numeric (e.g., 7 = 7 days ago).
+	 *
+	 * @param string $start_date
+	 *
+	 * @return string
+	 */
+	protected function calculate_start_date( string $start_date ) {
+		// Bail fast. If it's not numeric return.
+		if ( ! is_numeric( $start_date ) ) {
+			return $start_date;
+		}
+
+		// Get the start date in Y-m-d format.
+		return date( 'Y-m-d', strtotime( "-{$start_date} days" ) );
 	}
 }
 
