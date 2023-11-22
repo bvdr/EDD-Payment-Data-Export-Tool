@@ -73,7 +73,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 * : Filter payments based on product variations by providing price/download IDs.
 	 *
 	 * [--gateway-filter=<gateway-filter>]
-	 * : Filter payments based on gateway. Example: "paypal,stripe" (include PayPal and Stripe payments).
+	 * : Filter payments based on gateway. Example: "paypal,stripe" (include PayPal and Stripe payments). To see all available gateways, run "wp edd info".
 	 *
 	 * ## ADDITIONAL INFO
 	 *
@@ -322,6 +322,27 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 				WP_CLI::error( "Invalid product filter format: \"{$product_filter}\". Must be a string (e.g., \"123,456\")" );
 			}
 		}
+
+		// Validate the gateway filter.
+		if ( isset( $assoc_args['gateway-filter'] ) ) {
+			$gateway_filter = $assoc_args['gateway-filter'];
+
+			if ( ! is_string( $gateway_filter ) ) {
+				WP_CLI::error( "Invalid gateway filter: \"{$gateway_filter}\". Must be a string (e.g., \"paypal,stripe\")" );
+			}
+
+			// Check if all the gateways are valid.
+			$gateway_array = explode( ',', $gateway_filter );
+
+			$registered_gateways = array_keys( edd_get_payment_gateways() );
+
+			foreach ( $gateway_array as $gateway ) {
+				if ( ! in_array( $gateway, $registered_gateways, true ) ) {
+					$gateways_string = implode( ', ', $registered_gateways );
+					WP_CLI::error( "Invalid gateway: \"{$gateway}\". Available options: {$gateways_string}" );
+				}
+			}
+		}
 	}
 
 	/**
@@ -467,7 +488,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		}
 
 		// If there is a > comparison operator remove the refunds from the query.
-		$refunds_included_in_query = array_search( 'refunded', $args['status'], true );
+		$refunds_included_in_query = $args['status'] ? array_search( 'refunded', $args['status'], true ) : true;
 		if ( ! empty( $comparison_operator ) && false !== $refunds_included_in_query ) {
 			// Search for 'refunded' in the status array.
 			$refunded_key = $refunds_included_in_query;
@@ -531,17 +552,17 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$single_payment = [];
 
 			// Get the payment data fields that you want to include in the output.
-			in_array( 'id', $fields, true ) ? $single_payment['id'] = $payment->ID : '';
+			in_array( 'id', $fields, true ) ? $single_payment['id']                   = $payment->ID : '';
 			in_array( 'customer-id', $fields, true ) ? $single_payment['customer-id'] = $payment->customer_id : '';
-			in_array( 'date', $fields, true ) ? $single_payment['date'] = $payment->date : '';
-			in_array( 'status', $fields, true ) ? $single_payment['status'] = $payment->status : '';
-			in_array( 'amount', $fields, true ) ? $single_payment['amount'] = $payment->total : '';
-			in_array( 'gateway', $fields, true ) ? $single_payment['gateway'] = $payment->gateway : '';
-			in_array( 'name', $fields, true ) ? $single_payment['name'] = $payment->name : '';
-			in_array( 'note', $fields, true ) ? $single_payment['note'] = $payment->note : '';
-			in_array( 'address', $fields, true ) ? $single_payment['address'] = $payment->address : '';
-			in_array( 'email', $fields, true ) ? $single_payment['email'] = $payment->email : '';
-			in_array( 'phone', $fields, true ) ? $single_payment['phone'] = $payment->phone : '';
+			in_array( 'date', $fields, true ) ? $single_payment['date']               = $payment->date : '';
+			in_array( 'status', $fields, true ) ? $single_payment['status']           = $payment->status : '';
+			in_array( 'amount', $fields, true ) ? $single_payment['amount']           = $payment->total : '';
+			in_array( 'gateway', $fields, true ) ? $single_payment['gateway']         = $payment->gateway : '';
+			in_array( 'name', $fields, true ) ? $single_payment['name']               = $payment->name : '';
+			in_array( 'note', $fields, true ) ? $single_payment['note']               = $payment->note : '';
+			in_array( 'address', $fields, true ) ? $single_payment['address']         = $payment->address : '';
+			in_array( 'email', $fields, true ) ? $single_payment['email']             = $payment->email : '';
+			in_array( 'phone', $fields, true ) ? $single_payment['phone']             = $payment->phone : '';
 
 			$payment_data[] = $single_payment;
 		}
