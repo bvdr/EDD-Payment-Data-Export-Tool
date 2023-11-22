@@ -509,12 +509,11 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		}
 
 		// Use file_put_contents to write the data to the file.
-		$filesystem = WP_Filesystem();
-
+		// @todo: [Enhancement] Initialize the WP_Filesystem class and use it instead  of php file_put_contents.
 		if ( 'json' === $format ) {
-			$write_result = $filesystem->put_contents( $file, wp_json_encode( $payments, JSON_PRETTY_PRINT ) );
+			$write_result = file_put_contents( $file, wp_json_encode( $payments, JSON_PRETTY_PRINT ) ); // phpcs:ignore
 		} elseif ( 'csv' === $format ) {
-			$write_result = $filesystem->put_contents( $file, $this->array_to_csv( $payments ) );
+			$write_result = file_put_contents( $file, $this->array_to_csv( $payments ) ); // phpcs:ignore
 		}
 
 		if ( false === $write_result ) {
