@@ -462,7 +462,17 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		$payment_query = new EDD_Payments_Query( $args );
 		$payments      = $payment_query->get_payments();
 		$end_time      = microtime( true );
-		WP_CLI::line( 'Query time: ' . (int) ( $end_time - $start_time ) . ' seconds' );
+
+		// Show query time only larger than 1s.
+		if ( (int) ( $end_time - $start_time ) >= 1 ) {
+			WP_CLI::line( 'Query time: ' . (int) ( $end_time - $start_time ) . ' seconds' );
+		}
+
+		// If there are no payments returned from the query show a warning and exit.
+		if ( empty( $payments ) ) {
+			WP_CLI::warning( 'No payments found for the provided filters.' );
+			exit;
+		}
 
 		// Prepare the payment data for output.
 		$payment_data = [];
