@@ -148,8 +148,8 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		// Validate the last days.
 		if ( isset( $assoc_args['last-days'] ) ) {
-			$last_days = $assoc_args['last-days'];
-			$edd_query = new EDD_Payments_Query();
+			$last_days       = $assoc_args['last-days'];
+			$edd_query       = new EDD_Payments_Query();
 			$allowed_strings = array_keys( $edd_query->get_predefined_dates() );
 
 			// Invalidate start date and end date if last days is set.
@@ -399,7 +399,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		// If last days is set, use it to set the start date.
 		if ( ! empty( $last_days ) ) {
-			$args['start_date'] = $this->calculate_start_date($last_days);
+			$args['start_date'] = $this->calculate_start_date( $last_days );
 			if ( is_numeric( $last_days ) ) {
 				// Set the end date to today. This is needed since the default calculate-date function sets the end date to end of start day. This way the end_date will be set as the end of today.
 				$args['end_date'] = date( 'Y-m-d', strtotime( "today" ) );;
