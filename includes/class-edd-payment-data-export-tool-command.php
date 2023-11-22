@@ -104,7 +104,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		// If 'shell' output, print the data as table.
 		if ( 'shell' === $output ) {
 			if ( 'json' === $format ) {
-				WP_CLI::line( json_encode( $export_data, JSON_PRETTY_PRINT ) );
+				WP_CLI::line( wp_json_encode( $export_data, JSON_PRETTY_PRINT ) );
 			} elseif ( 'csv' === $format ) {
 				WP_CLI\Utils\format_items( 'table', $export_data, $assoc_args['fields'] ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS );
 			}
@@ -157,7 +157,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 				WP_CLI::error( 'Cannot use start date or end date with last days.' );
 			}
 
-			if ( ! is_numeric( $last_days ) && ! in_array( $last_days, $allowed_strings ) ) {
+			if ( ! is_numeric( $last_days ) && ! in_array( $last_days, $allowed_strings, true ) ) {
 				WP_CLI::error( "Invalid last days: \"{$last_days}\". Must be a number or one of the following strings: " . implode( ', ', $allowed_strings ) );
 			}
 		}
@@ -166,7 +166,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		if ( isset( $assoc_args['format'] ) ) {
 			$format = $assoc_args['format'];
 
-			if ( ! in_array( $format, [ 'csv', 'json' ] ) ) {
+			if ( ! in_array( $format, [ 'csv', 'json' ], true ) ) {
 				WP_CLI::error( "Invalid format: \"{$format}\". Options: csv, json." );
 			}
 		}
@@ -183,7 +183,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$fields_array = explode( ',', $fields );
 
 			foreach ( $fields_array as $field ) {
-				if ( ! in_array( $field, self::FIELDS ) ) {
+				if ( ! in_array( $field, self::FIELDS, true ) ) {
 					$fields_string = implode( ', ', self::FIELDS );
 					WP_CLI::error( "Invalid field: \"{$field}\". Available options: {$fields_string}" );
 				}
@@ -194,7 +194,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		if ( isset( $assoc_args['output'] ) ) {
 			$output = $assoc_args['output'];
 
-			if ( ! in_array( $output, [ 'shell', 'file' ] ) ) {
+			if ( ! in_array( $output, [ 'shell', 'file' ], true ) ) {
 				WP_CLI::error( "Invalid output: \"{$output}\". Options: shell, file." );
 			}
 
@@ -284,7 +284,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$status_array = explode( ',', $status_filter );
 
 			foreach ( $status_array as $status ) {
-				if ( ! in_array( $status, edd_get_payment_status_keys() ) ) {
+				if ( ! in_array( $status, edd_get_payment_status_keys(), true ) ) {
 					$statuses_string = implode( ', ', edd_get_payment_status_keys() );
 					WP_CLI::error( "Invalid status: \"{$status}\". Available options: {$statuses_string}" );
 				}
@@ -402,7 +402,8 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$args['start_date'] = $this->calculate_start_date( $last_days );
 			if ( is_numeric( $last_days ) ) {
 				// Set the end date to today. This is needed since the default calculate-date function sets the end date to end of start day. This way the end_date will be set as the end of today.
-				$args['end_date'] = date( 'Y-m-d', strtotime( "today" ) );;
+				$args['end_date'] = date( 'Y-m-d', strtotime( 'today' ) );
+
 			} else {
 				$args['end_date'] = false;
 			}
@@ -470,17 +471,17 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$single_payment = [];
 
 			// Get the payment data fields that you want to include in the output.
-			in_array( 'id', $fields ) ? $single_payment['id'] = $payment->ID : '';
-			in_array( 'customer-id', $fields ) ? $single_payment['customer-id'] = $payment->customer_id : '';
-			in_array( 'date', $fields ) ? $single_payment['date'] = $payment->date : '';
-			in_array( 'status', $fields ) ? $single_payment['status'] = $payment->status : '';
-			in_array( 'amount', $fields ) ? $single_payment['amount'] = $payment->total : '';
-			in_array( 'gateway', $fields ) ? $single_payment['gateway'] = $payment->gateway : '';
-			in_array( 'name', $fields ) ? $single_payment['name'] = $payment->name : '';
-			in_array( 'note', $fields ) ? $single_payment['note'] = $payment->note : '';
-			in_array( 'address', $fields ) ? $single_payment['address'] = $payment->address : '';
-			in_array( 'email', $fields ) ? $single_payment['email'] = $payment->email : '';
-			in_array( 'phone', $fields ) ? $single_payment['phone'] = $payment->phone : '';
+			in_array( 'id', $fields, true ) ? $single_payment['id']                   = $payment->ID : '';
+			in_array( 'customer-id', $fields, true ) ? $single_payment['customer-id'] = $payment->customer_id : '';
+			in_array( 'date', $fields, true ) ? $single_payment['date']               = $payment->date : '';
+			in_array( 'status', $fields, true ) ? $single_payment['status']           = $payment->status : '';
+			in_array( 'amount', $fields, true ) ? $single_payment['amount']           = $payment->total : '';
+			in_array( 'gateway', $fields, true ) ? $single_payment['gateway']         = $payment->gateway : '';
+			in_array( 'name', $fields, true ) ? $single_payment['name']               = $payment->name : '';
+			in_array( 'note', $fields, true ) ? $single_payment['note']               = $payment->note : '';
+			in_array( 'address', $fields, true ) ? $single_payment['address']         = $payment->address : '';
+			in_array( 'email', $fields, true ) ? $single_payment['email']             = $payment->email : '';
+			in_array( 'phone', $fields, true ) ? $single_payment['phone']             = $payment->phone : '';
 
 			$payment_data[] = $single_payment;
 		}
@@ -508,10 +509,12 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		}
 
 		// Use file_put_contents to write the data to the file.
+		$filesystem = WP_Filesystem();
+
 		if ( 'json' === $format ) {
-			$write_result = file_put_contents( $file, json_encode( $payments, JSON_PRETTY_PRINT ) );
+			$write_result = $filesystem->put_contents( $file, wp_json_encode( $payments, JSON_PRETTY_PRINT ) );
 		} elseif ( 'csv' === $format ) {
-			$write_result = file_put_contents( $file, $this->array_to_csv( $payments ) );
+			$write_result = $filesystem->put_contents( $file, $this->array_to_csv( $payments ) );
 		}
 
 		if ( false === $write_result ) {
@@ -536,7 +539,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		// Set the headers.
 		$headers = array_keys( $array[0] ?? [] );
-		$csv     .= implode( ',', $headers ) . "\n";
+		$csv    .= implode( ',', $headers ) . "\n";
 
 		// Set the rows.
 		foreach ( $array as $item ) {
@@ -549,7 +552,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	/**
 	 * Calculate the start date in Y-m-d format if it's numeric (e.g., 7 = 7 days ago).
 	 *
-	 * @param string $start_date
+	 * @param string $start_date The start date.
 	 *
 	 * @return string
 	 */
@@ -560,7 +563,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		}
 
 		// Get the start date in Y-m-d format.
-		return date( 'Y-m-d', strtotime( "-{$start_date} days" ) );
+		return gmdate( 'Y-m-d', strtotime( "-{$start_date} days" ) );
 	}
 }
 
