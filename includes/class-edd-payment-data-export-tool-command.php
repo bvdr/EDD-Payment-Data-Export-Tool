@@ -402,7 +402,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$args['start_date'] = $this->calculate_start_date( $last_days );
 			if ( is_numeric( $last_days ) ) {
 				// Set the end date to today. This is needed since the default calculate-date function sets the end date to end of start day. This way the end_date will be set as the end of today.
-				$args['end_date'] = date( 'Y-m-d', strtotime( 'today' ) );
+				$args['end_date'] = gmdate( 'Y-m-d', strtotime( 'today' ) );
 
 			} else {
 				$args['end_date'] = false;
