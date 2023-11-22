@@ -39,46 +39,54 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 *  [--start-date=<start-date>]
-	 *  : The start date for the payment data export. Format: Y-m-d (e.g., 2023-11-01).
+	 * [--start-date=<start-date>]
+	 * : The start date for the payment data export. Format: Y-m-d (e.g., 2023-11-01).
 	 *
-	 *  [--end-date=<end-date>]
-	 *  : The end date for the payment data export. Format: Y-m-d (e.g., 2023-11-31).
+	 * [--end-date=<end-date>]
+	 * : The end date for the payment data export. Format: Y-m-d (e.g., 2023-11-31).
 	 *
-	 *  [--last-days=<last-days>]
-	 *  : Export payment data from the last X days. Example: 7 (for the last 7 days). Predefined options: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, last_quarter, this_year, last_year.
+	 * [--last-days=<last-days>]
+	 * : Export payment data from the last X days. Example: 7 (for the last 7 days). Predefined options: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, last_quarter, this_year, last_year.
 	 *
-	 *  [--format=<format>]
-	 *  : The output format for the payment data export. Options: csv, json. Default: csv.
+	 * [--format=<format>]
+	 * : The output format for the payment data export. Options: csv, json. Default: csv.
 	 *
-	 *  [--fields=<fields>]
-	 *  : The fields to include in the payment data export (comma-separated). Default: email,date,status,amount,id,gateway.
+	 * [--fields=<fields>]
+	 * : The fields to include in the payment data export (comma-separated). Default: email,date,status,amount,id,gateway.
 	 *
-	 *  [--output=<output>]
-	 *  : The output destination for the payment data export. Options: shell, file. Default: shell.
+	 * [--output=<output>]
+	 * : The output destination for the payment data export. Options: shell, file. Default: shell.
 	 *
-	 *  [--file=<file>]
-	 *  : The file path for the payment data export. Required if output is set to "file".
+	 * [--file=<file>]
+	 * : The file path for the payment data export. Required if output is set to "file".
 	 *
-	 *  [--amount-filter=<amount-filter>]
-	 *  : Filter payments based on amount criteria. Example: '>$1.00' or '< $100' (greater than $100).
+	 * [--amount-filter=<amount-filter>]
+	 * : Filter payments based on amount criteria. Example: '>$1.00' or '< $100' (greater than $100).
 	 *
-	 *  [--status-filter=<status-filter>]
-	 *  : Filter payments based on status criteria. Example: "publish,refunded" (include complete and refunded payments).
+	 * [--status-filter=<status-filter>]
+	 * : Filter payments based on status criteria. Example: "publish,refunded" (include complete and refunded payments).
 	 *
-	 *  [--customer-filter=<customer-filter>]
-	 *  : Filter payments based on customer email or ID.
+	 * [--customer-filter=<customer-filter>]
+	 * : Filter payments based on customer email or ID.
 	 *
-	 *  [--product-filter=<product-filter>]
-	 *  : Filter payments based on product variations by providing price/download IDs.
+	 * [--product-filter=<product-filter>]
+	 * : Filter payments based on product variations by providing price/download IDs.
 	 *
-	 *  ## EXAMPLES
+	 * [--gateway-filter=<gateway-filter>]
+	 * : Filter payments based on gateway. Example: "paypal,stripe" (include PayPal and Stripe payments).
 	 *
-	 *  # Export payment data for the last 7 days in CSV format to the shell
-	 *  wp edd export_payment_data --last-days=7 --format=csv --output=shell --amount-filter='> $1.00' --status-filter='publish,refunded'
+	 * ## ADDITIONAL INFO
 	 *
-	 *  # Export payment data between specific dates in JSON format to a file
-	 *  wp edd export_payment_data --start-date=2023-11-01 --end-date=2023-11-30 --format=json --output=file --file=/path/to/export.json
+	 * # The refunds are treated as negative payments. For example an --amount-filter='> $1.00' will return all payments greater than $1.00 and no refunds.
+	 * An --amount-filter='< $1.00' will return all refunds.
+	 *
+	 * ## EXAMPLES
+	 *
+	 * # Export payment data for the last 7 days in CSV format to the shell
+	 * wp edd export_payment_data --last-days=7 --format=csv --output=shell --amount-filter='> $1.00' --status-filter='publish,refunded'
+	 *
+	 * # Export payment data between specific dates in JSON format to a file
+	 * wp edd export_payment_data --start-date=2023-11-01 --end-date=2023-11-30 --format=json --output=file --file=/path/to/export.json
 	 *
 	 * @param array $args       Command arguments.
 	 * @param array $assoc_args Command associative arguments.
@@ -523,17 +531,17 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$single_payment = [];
 
 			// Get the payment data fields that you want to include in the output.
-			in_array( 'id', $fields, true ) ? $single_payment['id']                   = $payment->ID : '';
+			in_array( 'id', $fields, true ) ? $single_payment['id'] = $payment->ID : '';
 			in_array( 'customer-id', $fields, true ) ? $single_payment['customer-id'] = $payment->customer_id : '';
-			in_array( 'date', $fields, true ) ? $single_payment['date']               = $payment->date : '';
-			in_array( 'status', $fields, true ) ? $single_payment['status']           = $payment->status : '';
-			in_array( 'amount', $fields, true ) ? $single_payment['amount']           = $payment->total : '';
-			in_array( 'gateway', $fields, true ) ? $single_payment['gateway']         = $payment->gateway : '';
-			in_array( 'name', $fields, true ) ? $single_payment['name']               = $payment->name : '';
-			in_array( 'note', $fields, true ) ? $single_payment['note']               = $payment->note : '';
-			in_array( 'address', $fields, true ) ? $single_payment['address']         = $payment->address : '';
-			in_array( 'email', $fields, true ) ? $single_payment['email']             = $payment->email : '';
-			in_array( 'phone', $fields, true ) ? $single_payment['phone']             = $payment->phone : '';
+			in_array( 'date', $fields, true ) ? $single_payment['date'] = $payment->date : '';
+			in_array( 'status', $fields, true ) ? $single_payment['status'] = $payment->status : '';
+			in_array( 'amount', $fields, true ) ? $single_payment['amount'] = $payment->total : '';
+			in_array( 'gateway', $fields, true ) ? $single_payment['gateway'] = $payment->gateway : '';
+			in_array( 'name', $fields, true ) ? $single_payment['name'] = $payment->name : '';
+			in_array( 'note', $fields, true ) ? $single_payment['note'] = $payment->note : '';
+			in_array( 'address', $fields, true ) ? $single_payment['address'] = $payment->address : '';
+			in_array( 'email', $fields, true ) ? $single_payment['email'] = $payment->email : '';
+			in_array( 'phone', $fields, true ) ? $single_payment['phone'] = $payment->phone : '';
 
 			$payment_data[] = $single_payment;
 		}
@@ -590,7 +598,7 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 
 		// Set the headers.
 		$headers = array_keys( $array[0] ?? [] );
-		$csv    .= implode( ',', $headers ) . "\n";
+		$csv     .= implode( ',', $headers ) . "\n";
 
 		// Set the rows.
 		foreach ( $array as $item ) {
