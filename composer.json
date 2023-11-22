@@ -12,5 +12,10 @@
             "!/vendor",
             "!/.git"
         ]
+    },
+    "scripts": {
+        "build-zip": [
+            "./tools/build-zip.sh"
+        ]
     }
 }

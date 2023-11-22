@@ -39,46 +39,54 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 *  [--start-date=<start-date>]
-	 *  : The start date for the payment data export. Format: Y-m-d (e.g., 2023-11-01).
+	 * [--start-date=<start-date>]
+	 * : The start date for the payment data export. Format: Y-m-d (e.g., 2023-11-01).
 	 *
-	 *  [--end-date=<end-date>]
-	 *  : The end date for the payment data export. Format: Y-m-d (e.g., 2023-11-31).
+	 * [--end-date=<end-date>]
+	 * : The end date for the payment data export. Format: Y-m-d (e.g., 2023-11-31).
 	 *
-	 *  [--last-days=<last-days>]
-	 *  : Export payment data from the last X days. Example: 7 (for the last 7 days). Predefined options: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, last_quarter, this_year, last_year.
+	 * [--last-days=<last-days>]
+	 * : Export payment data from the last X days. Example: 7 (for the last 7 days). Predefined options: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, last_quarter, this_year, last_year.
 	 *
-	 *  [--format=<format>]
-	 *  : The output format for the payment data export. Options: csv, json. Default: csv.
+	 * [--format=<format>]
+	 * : The output format for the payment data export. Options: csv, json. Default: csv.
 	 *
-	 *  [--fields=<fields>]
-	 *  : The fields to include in the payment data export (comma-separated). Default: email,date,status,amount,id,gateway.
+	 * [--fields=<fields>]
+	 * : The fields to include in the payment data export (comma-separated). Default: email,date,status,amount,id,gateway.
 	 *
-	 *  [--output=<output>]
-	 *  : The output destination for the payment data export. Options: shell, file. Default: shell.
+	 * [--output=<output>]
+	 * : The output destination for the payment data export. Options: shell, file. Default: shell.
 	 *
-	 *  [--file=<file>]
-	 *  : The file path for the payment data export. Required if output is set to "file".
+	 * [--file=<file>]
+	 * : The file path for the payment data export. Required if output is set to "file".
 	 *
-	 *  [--amount-filter=<amount-filter>]
-	 *  : Filter payments based on amount criteria. Example: '>$1.00' or '< $100' (greater than $100).
+	 * [--amount-filter=<amount-filter>]
+	 * : Filter payments based on amount criteria. Example: '>$1.00' or '< $100' (greater than $100).
 	 *
-	 *  [--status-filter=<status-filter>]
-	 *  : Filter payments based on status criteria. Example: "publish,refunded" (include complete and refunded payments).
+	 * [--status-filter=<status-filter>]
+	 * : Filter payments based on status criteria. Example: "publish,refunded" (include complete and refunded payments).
 	 *
-	 *  [--customer-filter=<customer-filter>]
-	 *  : Filter payments based on customer email or ID.
+	 * [--customer-filter=<customer-filter>]
+	 * : Filter payments based on customer email or ID.
 	 *
-	 *  [--product-filter=<product-filter>]
-	 *  : Filter payments based on product variations by providing price/download IDs.
+	 * [--product-filter=<product-filter>]
+	 * : Filter payments based on product variations by providing price/download IDs.
 	 *
-	 *  ## EXAMPLES
+	 * [--gateway-filter=<gateway-filter>]
+	 * : Filter payments based on gateway. Example: "paypal,amazon" (get PayPal payments and Amazon payments). To see all available gateways, run "wp edd export_payment_data --gateway-filter=help".
 	 *
-	 *  # Export payment data for the last 7 days in CSV format to the shell
-	 *  wp edd export_payment_data --last-days=7 --format=csv --output=shell --amount-filter='> $1.00' --status-filter='publish,refunded'
+	 * ## ADDITIONAL INFO
 	 *
-	 *  # Export payment data between specific dates in JSON format to a file
-	 *  wp edd export_payment_data --start-date=2023-11-01 --end-date=2023-11-30 --format=json --output=file --file=/path/to/export.json
+	 * # The refunds are treated as negative payments. For example an --amount-filter='> $1.00' will return all payments greater than $1.00 and no refunds.
+	 * An --amount-filter='< $1.00' will return all refunds.
+	 *
+	 * ## EXAMPLES
+	 *
+	 * # Export payment data for the last 7 days in CSV format to the shell
+	 * wp edd export_payment_data --last-days=7 --format=csv --output=shell --amount-filter='> $1.00' --status-filter='publish,refunded'
+	 *
+	 * # Export payment data between specific dates in JSON format to a file
+	 * wp edd export_payment_data --start-date=2023-11-01 --end-date=2023-11-30 --format=json --output=file --file=/path/to/export.json
 	 *
 	 * @param array $args       Command arguments.
 	 * @param array $assoc_args Command associative arguments.
@@ -314,6 +322,33 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 				WP_CLI::error( "Invalid product filter format: \"{$product_filter}\". Must be a string (e.g., \"123,456\")" );
 			}
 		}
+
+		// Validate the gateway filter.
+		if ( isset( $assoc_args['gateway-filter'] ) ) {
+			$gateway_filter = $assoc_args['gateway-filter'];
+
+			if ( ! is_string( $gateway_filter ) ) {
+				WP_CLI::error( "Invalid gateway filter: \"{$gateway_filter}\". Must be a string (e.g., \"paypal,amazon\")" );
+			}
+
+			// Check if all the gateways are valid.
+			$gateway_array = explode( ',', str_replace( ' ', '', $gateway_filter ) );
+
+			$registered_gateways = array_keys( edd_get_payment_gateways() );
+
+			// If wp edd export_payment_data --gateway-filter=help, show the available gateways.
+			if ( 'help' === $gateway_filter ) {
+				WP_CLI::line( 'Available gateways: ' . implode( ', ', $registered_gateways ) );
+				exit;
+			}
+
+			foreach ( $gateway_array as $gateway ) {
+				if ( ! in_array( $gateway, $registered_gateways, true ) ) {
+					$gateways_string = implode( ', ', $registered_gateways );
+					WP_CLI::error( "Invalid gateway: \"{$gateway}\". Available options: {$gateways_string}" );
+				}
+			}
+		}
 	}
 
 	/**
@@ -351,8 +386,9 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 		$customer_filter = $assoc_args['customer-filter'] ?? '';
 		$product_filter  = $assoc_args['product-filter'] ?? '';
 		$fields          = isset( $assoc_args['fields'] ) ? explode( ',', $assoc_args['fields'] ) : self::DEFAULT_FIELDS;
+		$gateway_filter  = $assoc_args['gateway-filter'] ?? '';
 
-		$result = $this->edd_payment_data_fetch( $start_date, $end_date, $last_days, $amount_filter, $status_filter, $customer_filter, $product_filter, $fields );
+		$result = $this->edd_payment_data_fetch( $start_date, $end_date, $last_days, $amount_filter, $status_filter, $customer_filter, $product_filter, $fields, $gateway_filter );
 
 		return $result;
 	}
@@ -368,10 +404,11 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 	 * @param string $customer_filter The customer filter for payment data.
 	 * @param string $product_filter  The product filter for payment data.
 	 * @param array  $fields          The product filter for payment data.
+	 * @param array  $gateway_filter  The gateway filter for payment data.
 	 *
 	 * @return array The fetched payment data.
 	 */
-	protected function edd_payment_data_fetch( $start_date = '', $end_date = '', $last_days = '', $amount_filter = '', $status_filter = '', $customer_filter = '', $product_filter = '', $fields = [] ) {
+	protected function edd_payment_data_fetch( $start_date = '', $end_date = '', $last_days = '', $amount_filter = '', $status_filter = '', $customer_filter = '', $product_filter = '', $fields = [], $gateway_filter = '' ) {
 		// Include the necessary Easy Digital Downloads files.
 		if ( ! class_exists( 'EDD_Payments_Query' ) ) {
 			require_once EDD_PLUGIN_DIR . 'includes/payments/class-payments-query.php';
@@ -409,7 +446,15 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			}
 		}
 
+		// Set the status filter if provided.
+		if ( ! empty( $status_filter ) ) {
+			$args['status'] = explode( ',', $status_filter );
+		}
+
 		// Set the amount filter if provided.
+		$comparison_amount   = '';
+		$comparison_operator = '';
+
 		if ( ! empty( $amount_filter ) ) {
 			// Remove the $ sign.
 			$amount_filter = str_replace( '$', '', $amount_filter );
@@ -420,21 +465,16 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			// Remove any commas.
 			$amount_filter = str_replace( ',', '', $amount_filter );
 
-			$operator = substr( $amount_filter, 0, 1 );
-			$amount   = substr( $amount_filter, 1 );
+			$comparison_operator = substr( $amount_filter, 0, 1 );
+			$comparison_amount   = substr( $amount_filter, 1 );
 
 			// Set the amount filter.
 			$args['meta_query'][] = [
 				'key'     => '_edd_payment_total',
-				'value'   => $amount,
-				'compare' => $operator,
+				'value'   => $comparison_amount,
+				'compare' => $comparison_operator,
 				'type'    => 'DECIMAL',
 			];
-		}
-
-		// Set the status filter if provided.
-		if ( ! empty( $status_filter ) ) {
-			$args['status'] = explode( ',', $status_filter );
 		}
 
 		// Set the customer filter if provided.
@@ -455,13 +495,67 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$args['download'] = explode( ',', $product_filter );
 		}
 
+		// Set the gateway filter if provided.
+		if ( ! empty( $gateway_filter ) ) {
+			$gateways = explode( ',', str_replace( ' ', '', $gateway_filter ) );
+
+			// Append the gateways to the meta query.
+			$args['meta_query'][] = [
+				'key'     => '_edd_payment_gateway',
+				'value'   => $gateways,
+				'compare' => 'IN',
+			];
+		}
+
+		// If there is a > comparison operator remove the refunds from the query.
+		$refunds_included_in_query = $args['status'] ? array_search( 'refunded', $args['status'], true ) : true;
+		if ( ! empty( $comparison_operator ) && false !== $refunds_included_in_query ) {
+			// Search for 'refunded' in the status array.
+			$refunded_key = $refunds_included_in_query;
+
+			// If 'refunded' is found, remove it from the array.
+			if ( false !== $refunded_key ) {
+				unset( $args['status'][ $refunded_key ] );
+			}
+
+			// If the operator is > and refunds is the only status. Exit with warning.
+			if ( '>' === $comparison_operator && empty( $args['status'] ) ) {
+				WP_CLI::warning( 'Cannot use ">" comparison operator with "refunded" status only.' );
+				exit;
+			}
+
+			// Create a new args only for the refunds.
+			$args_refunds           = $args;
+			$args_refunds['status'] = [ 'refunded' ];
+
+			// Check which meta query is the one for '_edd_payment_total' key and unset it.
+			foreach ( $args_refunds['meta_query'] as $key => $meta_query ) {
+				if ( '_edd_payment_total' === $meta_query['key'] ) {
+					unset( $args_refunds['meta_query'][ $key ] );
+				}
+			}
+		}
+
 		// Asses performance with microtime.
 		$start_time = microtime( true );
 
 		// Perform the payment data query.
-		$payment_query = new EDD_Payments_Query( $args );
-		$payments      = $payment_query->get_payments();
-		$end_time      = microtime( true );
+		$payments = [];
+		if ( 'refunded' !== $status_filter ) { // Special case were only refunds are queried. E.g., wp edd export_payment_data --last-days=1000 --format=csv --output=shell --amount-filter='< $10000.00' --status-filter='refunded'.
+			$payment_query = new EDD_Payments_Query( $args );
+			$payments      = $payment_query->get_payments();
+		}
+
+		if ( ! empty( $comparison_operator ) && '<' === $comparison_operator && false !== $refunds_included_in_query ) {
+			// Perform the refunds query.
+			$payment_query_refunds = new EDD_Payments_Query( $args_refunds );
+			$refunds               = $payment_query_refunds->get_payments();
+
+			// Merge the refunds with the payments.
+			$payments = array_merge( $payments, $refunds );
+		}
+
+		$end_time = microtime( true );
 
 		// Show query time only larger than 1s.
 		if ( (int) ( $end_time - $start_time ) >= 1 ) {
