@@ -409,7 +409,15 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			}
 		}
 
+		// Set the status filter if provided.
+		if ( ! empty( $status_filter ) ) {
+			$args['status'] = explode( ',', $status_filter );
+		}
+
 		// Set the amount filter if provided.
+		$comparison_amount   = '';
+		$comparison_operator = '';
+
 		if ( ! empty( $amount_filter ) ) {
 			// Remove the $ sign.
 			$amount_filter = str_replace( '$', '', $amount_filter );
@@ -420,21 +428,16 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			// Remove any commas.
 			$amount_filter = str_replace( ',', '', $amount_filter );
 
-			$operator = substr( $amount_filter, 0, 1 );
-			$amount   = substr( $amount_filter, 1 );
+			$comparison_operator = substr( $amount_filter, 0, 1 );
+			$comparison_amount   = substr( $amount_filter, 1 );
 
 			// Set the amount filter.
 			$args['meta_query'][] = [
 				'key'     => '_edd_payment_total',
-				'value'   => $amount,
-				'compare' => $operator,
+				'value'   => $comparison_amount,
+				'compare' => $comparison_operator,
 				'type'    => 'DECIMAL',
 			];
-		}
-
-		// Set the status filter if provided.
-		if ( ! empty( $status_filter ) ) {
-			$args['status'] = explode( ',', $status_filter );
 		}
 
 		// Set the customer filter if provided.
@@ -455,13 +458,52 @@ class EDD_Payment_Data_Export_Tool_Command extends WP_CLI_Command {
 			$args['download'] = explode( ',', $product_filter );
 		}
 
+		// If there is a > comparison operator remove the refunds from the query.
+		$refunds_included_in_query = array_search( 'refunded', $args['status'], true );
+		if ( ! empty( $comparison_operator ) && false !== $refunds_included_in_query ) {
+			// Search for 'refunded' in the status array.
+			$refunded_key = $refunds_included_in_query;
+
+			// If 'refunded' is found, remove it from the array.
+			if ( false !== $refunded_key ) {
+				unset( $args['status'][ $refunded_key ] );
+			}
+
+			// If the operator is > and refunds is the only statys. Exit with warning.
+			if ( '>' === $comparison_operator && empty( $args['status'] ) ) {
+				WP_CLI::warning( 'Cannot use ">" comparison operator with "refunded" status only.' );
+				exit;
+			}
+
+			// Create a new args only for the refunds.
+			$args_refunds           = $args;
+			$args_refunds['status'] = [ 'refunded' ];
+
+			// Check which meta query is the one for '_edd_payment_total' key and unset it.
+			foreach ( $args_refunds['meta_query'] as $key => $meta_query ) {
+				if ( '_edd_payment_total' === $meta_query['key'] ) {
+					unset( $args_refunds['meta_query'][ $key ] );
+				}
+			}
+		}
+
 		// Asses performance with microtime.
 		$start_time = microtime( true );
 
 		// Perform the payment data query.
 		$payment_query = new EDD_Payments_Query( $args );
 		$payments      = $payment_query->get_payments();
-		$end_time      = microtime( true );
+
+		if ( ! empty( $comparison_operator ) && '<' === $comparison_operator && false !== $refunds_included_in_query ) {
+			// Perform the refunds query.
+			$payment_query_refunds = new EDD_Payments_Query( $args_refunds );
+			$refunds               = $payment_query_refunds->get_payments();
+
+			// Merge the refunds with the payments.
+			$payments = array_merge( $payments, $refunds );
+		}
+
+		$end_time = microtime( true );
 
 		// Show query time only larger than 1s.
 		if ( (int) ( $end_time - $start_time ) >= 1 ) {
