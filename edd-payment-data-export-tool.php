@@ -4,13 +4,13 @@
  * Description: 🛠️ WP-CLI command to export payment data from Easy Digital Downloads.
  * Author: Bogdan Dragomir
  * Author URI: https://bogdan.is?utm_source=wordpress&utm_medium=plugin&utm_campaign=edd-payment-data-export-tool
- * Version: 1.0.5
+ * Version: 1.0.6
  * Text Domain: easy-digital-downloads-tools
  * Domain Path: languages
  *
  * @package EDDTools
  * @author Bogdan Dragomir
- * @version 1.0.5
+ * @version 1.0.6
  */
 
 // Exit if accessed directly.
